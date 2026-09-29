@@ -1,0 +1,17 @@
+{
+  "name": "firsatci-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "firsatci.app statik tanıtım ve hukuki metin sitesi (GitHub Pages, docs/)",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "onizleme": "node sunucu.mjs",
+    "kontrol": "node build.mjs && node sunucu.mjs --kontrol"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
