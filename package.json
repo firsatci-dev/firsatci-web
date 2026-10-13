@@ -10,7 +10,8 @@
   "scripts": {
     "build": "node build.mjs",
     "onizleme": "node sunucu.mjs",
-    "kontrol": "node build.mjs && node sunucu.mjs --kontrol"
+    "kontrol": "node build.mjs && node sunucu.mjs --kontrol",
+    "test": "node --test test/"
   },
   "dependencies": {},
   "devDependencies": {}

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sayfa bulunamadı — Fırsatçı</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="color-scheme" content="light dark">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<a class="atla" href="#icerik">İçeriğe atla</a>
+<header class="ust">
+  <nav aria-label="Ana menü">
+<ul><li><a href="/">Fırsatçı</a></li><li><a href="/gizlilik/">Gizlilik</a></li><li><a href="/kosullar/">Koşullar</a></li><li><a href="/hesap-silme/">Hesap Silme</a></li></ul>
+  </nav>
+</header>
+<main id="icerik">
+<div class="tanitim">
+<section id="yok">
+<h1>Sayfa bulunamadı</h1>
+<p>Aradığın sayfa yok ya da taşınmış olabilir. <a href="/">Ana sayfaya dön</a>.</p>
+<noscript><p>Bir işletme davet bağlantısıyla geldiysen: Uygulamayı kurduktan sonra Profil → İşletme kodum var'a bağlantının sonundaki kodu gir.</p></noscript>
+</section>
+<section id="esnaf" hidden>
+<h1>Fırsatçı — Dükkânım</h1>
+<p>Dükkânım, esnafın Fırsatçı'da dükkânını açıp dükkânına uygun banka kampanyalarını görmesini ve kendi kampanyasını yayınlamasını sağlar. Bu sayfaya, sana gönderilen işletme davet bağlantısıyla geldin.</p>
+<div id="kod-kutu" class="kod-kutu" hidden>
+<p class="kod-etiket" id="kod-etiket">İşletme kodun</p>
+<p id="kod" class="kod" aria-labelledby="kod-etiket"></p>
+<button type="button" id="kopyala" class="kopyala">Kodu kopyala</button>
+<p id="kopya-durum" class="kopya-durum" role="status" aria-live="polite"></p>
+</div>
+<p id="kod-okunmadi" hidden>Bağlantıdaki kod okunamadı. Kodu sana gönderen kişiden bağlantıyı yeniden iste.</p>
+<p><strong>Uygulamayı kurduktan sonra Profil → İşletme kodum var'a bu kodu gir.</strong></p>
+<h2>İndir</h2>
+<ul class="magazalar"><li><span class="magaza" aria-disabled="true"><span class="magaza-ad">Google Play</span><span class="magaza-not">Yakında</span></span></li><li><span class="magaza" aria-disabled="true"><span class="magaza-ad">App Store</span><span class="magaza-not">Yakında</span></span></li></ul>
+</section>
+</div>
+</main>
+<footer class="alt">
+  <p><a href="mailto:support@firsatci.app">support@firsatci.app</a> · © 2026 Fırsatçı.</p>
+</footer>
+<script>
+/* firsatci.app/esnaf/<kod> — kodu adres yolundan okur, SUNUCUYA SORMAZ.
+   Çerez, depolama, analitik, ağ isteği yok. build.mjs bu dosyayı 404.html'e gömer. */
+
+var ESNAF_KOD_BICIMI = /^[A-Za-z2-9]{8}$/
+var ESNAF_ALFABE = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+
+/** null: yol /esnaf ile başlamıyor · '': /esnaf var ama okunabilir kod yok · 'ABCD2345' */
+function esnafKodCikar (yol) {
+  var parcalar = String(yol).split('/')
+  if (parcalar[1] === undefined || parcalar[1].toLowerCase() !== 'esnaf') return null
+  var ham = parcalar[2] || ''
+  try { ham = decodeURIComponent(ham) } catch (e) { return '' }
+  ham = ham.replace(/[\s-]+/g, '')
+  if (!ESNAF_KOD_BICIMI.test(ham)) return ''
+  var kod = ham.toUpperCase()
+  for (var i = 0; i < kod.length; i++) {
+    if (ESNAF_ALFABE.indexOf(kod.charAt(i)) === -1) return ''
+  }
+  return kod
+}
+
+function esnafPanoyaYaz (doc, nav, metin, bitti) {
+  if (nav && nav.clipboard && typeof nav.clipboard.writeText === 'function') {
+    nav.clipboard.writeText(metin).then(function () { bitti(true) }, function () { bitti(esnafEskiKopya(doc, metin)) })
+    return
+  }
+  bitti(esnafEskiKopya(doc, metin))
+}
+
+function esnafEskiKopya (doc, metin) {
+  try {
+    var alan = doc.createElement('textarea')
+    alan.value = metin
+    alan.setAttribute('readonly', '')
+    alan.style.position = 'fixed'
+    alan.style.opacity = '0'
+    doc.body.appendChild(alan)
+    alan.select()
+    var tamam = doc.execCommand('copy')
+    doc.body.removeChild(alan)
+    return !!tamam
+  } catch (e) {
+    return false
+  }
+}
+
+function esnafSayfaKur (doc, konum, nav) {
+  var kod = esnafKodCikar(konum.pathname)
+  if (kod === null) return
+
+  doc.getElementById('yok').hidden = true
+  doc.getElementById('esnaf').hidden = false
+  doc.title = 'Fırsatçı — Dükkânım'
+
+  if (!kod) {
+    doc.getElementById('kod-okunmadi').hidden = false
+    return
+  }
+
+  doc.getElementById('kod-kutu').hidden = false
+  doc.getElementById('kod').textContent = kod
+  var durum = doc.getElementById('kopya-durum')
+  doc.getElementById('kopyala').addEventListener('click', function () {
+    esnafPanoyaYaz(doc, nav, kod, function (tamam) {
+      durum.textContent = tamam
+        ? 'Kod kopyalandı.'
+        : 'Kopyalanamadı. Kodu basılı tutup seçerek kopyalayabilirsin.'
+    })
+  })
+}
+
+if (typeof document !== 'undefined') esnafSayfaKur(document, location, navigator)
+</script>
+</body>
+</html>

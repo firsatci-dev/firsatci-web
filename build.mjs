@@ -72,6 +72,17 @@ const SAYFALAR = [
 /** /privacy → /gizlilik/ gibi kalıcı takma adlar (mağaza formlarına yazılacak). */
 const YONLENDIRMELER = { privacy: 'gizlilik', terms: 'kosullar', 'delete-account': 'hesap-silme' }
 
+/** Uygulama kimlikleri — herkese açık tanımlayıcılardır (koordinatör ölçtü, 2026-10-13).
+ *  Değişirse (ör. Play imzalama anahtarı) burası değişir, docs/.well-known yeniden üretilir. */
+const IOS_TAKIM_KIMLIGI = '8AH2DMGQJG'
+const IOS_PAKET = 'com.firsatci.app.ios'
+const ANDROID_PAKET = 'com.firsatci299'
+/** Play App Signing sertifikası (mağazadan inen uygulamanın imzası) — yükleme anahtarı DEĞİL. */
+const ANDROID_SHA256 =
+  'FB:E6:20:D6:4A:F6:8B:36:F4:44:B8:A4:86:92:21:F0:82:91:59:29:10:0F:94:18:F8:B2:0E:07:41:0C:D2:24'
+/** Uygulamaya açılan tek yol öneki (AASA + Android intent filtresi + 404.html aynı). */
+const ESNAF_YOL_ONEKI = '/esnaf/*'
+
 /** Kaynak Markdown'daki göreli bağlantıların site karşılığı. */
 const MD_HEDEF = {
   'index.md': '/',
@@ -382,6 +393,173 @@ function tanitimHtml (bl) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// /esnaf/<kod> — tek şablon sayfa + uygulama bağlantısı doğrulama dosyaları
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// Kod rastgele ve sınırsız → yol önceden üretilemez. GitHub Pages sunucu tarafı
+// yeniden yazma yapmaz; bilinmeyen her yola docs/404.html verir (durum kodu 404).
+// En basit çalışan yol: 404.html tek şablon; küçük bir betik (assets/esnaf.js)
+// adres yolundan kodu okur. /esnaf/ ile başlamayan yollarda aynı dosya sade
+// "Sayfa bulunamadı" gösterir. Kod sunucuya sorulmaz.
+
+const ESNAF_BASLIK = 'Fırsatçı — Dükkânım'
+const ESNAF_ACIKLAMA = "Dükkânım, esnafın Fırsatçı'da dükkânını açıp dükkânına uygun banka "
+  + 'kampanyalarını görmesini ve kendi kampanyasını yayınlamasını sağlar. '
+  + 'Bu sayfaya, sana gönderilen işletme davet bağlantısıyla geldin.'
+const ESNAF_YONERGE = "Uygulamayı kurduktan sonra Profil → İşletme kodum var'a bu kodu gir."
+
+/** Mağaza bağlantısı index.md'nin "İndir" listesinden gelir: `[…](https://…)` varsa bağlantı,
+ *  yoksa ("Yakında" işareti) sayfa da aynı "Yakında" metnini gösterir. */
+function magazaBaglantisi (indexMetni, ad) {
+  const m = indexMetni.replace(YORUM, '')
+    .match(new RegExp(`\\[[^\\]]*${ad}[^\\]]*\\]\\((https:\\/\\/[^()\\s]+)\\)`, 'i'))
+  return m ? m[1] : null
+}
+
+function esnafMagazaHtml (indexMetni) {
+  return '<ul class="magazalar">' + [['Google Play', 'Google Play'], ['App Store', 'App Store']]
+    .map(([ad, anahtar]) => {
+      const adres = magazaBaglantisi(indexMetni, anahtar)
+      return adres
+        ? `<li><a class="magaza" href="${kacirNitelik(adres)}"><span class="magaza-ad">${ad}</span></a></li>`
+        : '<li><span class="magaza" aria-disabled="true">'
+          + `<span class="magaza-ad">${ad}</span><span class="magaza-not">Yakında</span></span></li>`
+    }).join('') + '</ul>'
+}
+
+function esnafBelge (indexMetni, betik) {
+  return `<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sayfa bulunamadı — Fırsatçı</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="color-scheme" content="light dark">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<a class="atla" href="#icerik">İçeriğe atla</a>
+<header class="ust">
+  <nav aria-label="Ana menü">
+${menuHtml(null)}
+  </nav>
+</header>
+<main id="icerik">
+<div class="tanitim">
+<section id="yok">
+<h1>Sayfa bulunamadı</h1>
+<p>Aradığın sayfa yok ya da taşınmış olabilir. <a href="/">Ana sayfaya dön</a>.</p>
+<noscript><p>Bir işletme davet bağlantısıyla geldiysen: ${kacir(ESNAF_YONERGE.replace('bu kodu', 'bağlantının sonundaki kodu'))}</p></noscript>
+</section>
+<section id="esnaf" hidden>
+<h1>${kacir(ESNAF_BASLIK)}</h1>
+<p>${kacir(ESNAF_ACIKLAMA)}</p>
+<div id="kod-kutu" class="kod-kutu" hidden>
+<p class="kod-etiket" id="kod-etiket">İşletme kodun</p>
+<p id="kod" class="kod" aria-labelledby="kod-etiket"></p>
+<button type="button" id="kopyala" class="kopyala">Kodu kopyala</button>
+<p id="kopya-durum" class="kopya-durum" role="status" aria-live="polite"></p>
+</div>
+<p id="kod-okunmadi" hidden>Bağlantıdaki kod okunamadı. Kodu sana gönderen kişiden bağlantıyı yeniden iste.</p>
+<p><strong>${kacir(ESNAF_YONERGE)}</strong></p>
+<h2>İndir</h2>
+${esnafMagazaHtml(indexMetni)}
+</section>
+</div>
+</main>
+<footer class="alt">
+  <p><a href="mailto:${DESTEK}">${DESTEK}</a> · © 2026 Fırsatçı.</p>
+</footer>
+<script>
+${betik.trimEnd()}
+</script>
+</body>
+</html>
+`
+}
+
+/** iOS evrensel bağlantı ilişkilendirmesi. Uzantısız dosya, yalnız /esnaf/*. */
+function aasaJson () {
+  return JSON.stringify({
+    applinks: {
+      details: [{
+        appIDs: [`${IOS_TAKIM_KIMLIGI}.${IOS_PAKET}`],
+        components: [{ '/': ESNAF_YOL_ONEKI }],
+      }],
+    },
+  }, null, 2) + '\n'
+}
+
+/** Android uygulama bağlantısı doğrulaması. */
+function assetlinksJson () {
+  return JSON.stringify([{
+    relation: ['delegate_permission/common.handle_all_urls'],
+    target: {
+      namespace: 'android_app',
+      package_name: ANDROID_PAKET,
+      sha256_cert_fingerprints: [ANDROID_SHA256],
+    },
+  }], null, 2) + '\n'
+}
+
+const ESNAF_YASAK_BETIK = /document\.cookie|localStorage|sessionStorage|indexedDB|fetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|new\s+Image|import\s*\(/
+
+/** /esnaf sayfasının gizlilik/bağlantısızlık sözleşmesini üretilen dosyalardan ölçer. */
+function esnafKontrolu (cikti, digerSayfalar, betik) {
+  const hatalar = []
+  const oku = (g) => readFileSync(join(cikti, g), 'utf8')
+  const var_ = (g) => existsSync(join(cikti, g))
+
+  const sayfa = oku('404.html')
+  if (!/<meta name="robots" content="[^"]*noindex/.test(sayfa)) hatalar.push('404.html: noindex yok')
+  if (/<script[^>]*\ssrc=|<link[^>]*rel="(?:preload|prefetch|preconnect)"/.test(sayfa)) {
+    hatalar.push('404.html: dış betik/ön yükleme var')
+  }
+  if (ESNAF_YASAK_BETIK.test(betik)) hatalar.push('esnaf.js: çerez/depolama/ağ çağrısı var')
+  if (!sayfa.includes(betik.trimEnd())) hatalar.push('404.html: gömülü betik assets/esnaf.js ile aynı değil')
+
+  for (const s of digerSayfalar) {
+    if (/(?:href="[^"]*|firsatci\.app)\/esnaf/i.test(s.html)) {
+      hatalar.push(`${s.adres}: /esnaf adresine bağlantı var`)
+    }
+  }
+  for (const dosya of ['sitemap.xml', 'sitemap_index.xml']) {
+    if (var_(dosya)) hatalar.push(`${dosya} üretilmiş — esnaf sayfası site haritasında olmamalı`)
+  }
+  if (var_('robots.txt') && /esnaf/i.test(oku('robots.txt'))) {
+    hatalar.push('robots.txt esnaf yolunu anıyor (Disallow noindex meta etiketini gizler)')
+  }
+
+  const asil = {
+    aasa: aasaJson(),
+    assetlinks: assetlinksJson(),
+  }
+  try {
+    const aasa = JSON.parse(oku('.well-known/apple-app-site-association'))
+    const d = aasa.applinks.details
+    if (d.length !== 1 || d[0].appIDs.join() !== `${IOS_TAKIM_KIMLIGI}.${IOS_PAKET}`) {
+      hatalar.push('AASA: appIDs beklenen değil')
+    }
+    if (d[0].components.length !== 1 || d[0].components[0]['/'] !== ESNAF_YOL_ONEKI) {
+      hatalar.push(`AASA: yol yalnız ${ESNAF_YOL_ONEKI} olmalı`)
+    }
+    if (oku('.well-known/apple-app-site-association') !== asil.aasa) hatalar.push('AASA: içerik üretimle uyuşmuyor')
+  } catch (e) { hatalar.push(`AASA: geçerli JSON değil (${e.message})`) }
+  try {
+    const al = JSON.parse(oku('.well-known/assetlinks.json'))
+    const t = al[0].target
+    if (al.length !== 1 || t.namespace !== 'android_app' || t.package_name !== ANDROID_PAKET) {
+      hatalar.push('assetlinks: paket/ad alanı beklenen değil')
+    }
+    if (!t.sha256_cert_fingerprints.every((p) => /^(?:[0-9A-F]{2}:){31}[0-9A-F]{2}$/.test(p))) {
+      hatalar.push('assetlinks: parmak izi 32 baytlık büyük harf onaltılı değil')
+    }
+  } catch (e) { hatalar.push(`assetlinks: geçerli JSON değil (${e.message})`) }
+  return hatalar
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // YÖNLENDİRME SAYFALARI (meta-refresh)
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -599,11 +777,28 @@ function derle () {
     sayfalar.push({ adres: `/${takma}/`, html })
   }
 
+  // ── /esnaf/<kod>: 404.html tek şablon + iki uygulama bağlantısı doğrulama dosyası ──
+  const digerSayfalar = [...sayfalar]
+  const indexKaynagi = join(KAYNAK, 'index.md')
+  const betik = readFileSync(join(VARLIK, 'esnaf.js'), 'utf8')
+  const esnafHtml = esnafBelge(existsSync(indexKaynagi) ? readFileSync(indexKaynagi, 'utf8') : '', betik)
+  yaz(join(CIKTI, '404.html'), esnafHtml)
+  yaz(join(CIKTI, '.well-known', 'apple-app-site-association'), aasaJson())
+  yaz(join(CIKTI, '.well-known', 'assetlinks.json'), assetlinksJson())
+  uretilen.push('docs/404.html   ←  assets/esnaf.js   →  /esnaf/<kod> (ve bilinmeyen her yol)')
+  uretilen.push('docs/.well-known/apple-app-site-association   →  iOS, yalnız /esnaf/*')
+  uretilen.push('docs/.well-known/assetlinks.json   →  Android')
+  sayfalar.push({ adres: '/404.html', html: esnafHtml })
+  const esnafMobil = mobilKontrolu('404.html', esnafHtml)
+  hatalar.push(...esnafMobil.hatalar)
+  olcumler.push(['404.html', esnafMobil.enUzun])
+
   yaz(join(CIKTI, 'style.css'), css)
   yaz(join(CIKTI, 'CNAME'), ALAN_ADI + '\n')
   yaz(join(CIKTI, '.nojekyll'), '')
   hatalar.push(...cssKontrolu(css))
   hatalar.push(...bagKontrolu(sayfalar))
+  hatalar.push(...esnafKontrolu(CIKTI, digerSayfalar, betik))
 
   // ── rapor ────────────────────────────────────────────────────────────────
   console.log(`kaynak : ${KAYNAK}`)
@@ -620,6 +815,9 @@ function derle () {
   const bagSayi = sayfalar.reduce(
     (t, s) => t + [...s.html.matchAll(/\shref="\/[^"]*"/g)].length, 0)
   console.log(`bağlantılar    : ${bagSayi} site içi bağlantı ve çıpa hedefi doğrulandı`)
+  console.log('esnaf sayfası  : 404.html noindex · hiçbir sayfadan bağlantı yok · site haritası/robots yok ·')
+  console.log('                 betikte çerez/depolama/ağ çağrısı yok · AASA ve assetlinks geçerli JSON,')
+  console.log(`                 yol yalnız ${ESNAF_YOL_ONEKI} · parmak izi 32 bayt`)
   console.log(`mobil (${EKRAN} px) : kullanılabilir genişlik ${KULLANILABILIR} px; `
     + 'bölünemeyen en uzun belirteç →')
   for (const [ad, uzunluk] of olcumler) {

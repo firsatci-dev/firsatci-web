@@ -1,0 +1,16 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [
+          "8AH2DMGQJG.com.firsatci.app.ios"
+        ],
+        "components": [
+          {
+            "/": "/esnaf/*"
+          }
+        ]
+      }
+    ]
+  }
+}
