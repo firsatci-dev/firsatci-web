@@ -236,10 +236,55 @@ th { background: var(--zemin-2); font-weight: 600; }
   color: var(--yazi-2);
   cursor: not-allowed;
 }
+a.magaza { cursor: pointer; text-decoration: none; color: var(--yazi); }
+a.magaza:hover { border-color: var(--vurgu); }
 .magaza-ad { font-weight: 600; color: var(--yazi); }
 .magaza-not { font-size: 0.82rem; }
 
 .dil-ayraci { margin: 3rem 0 2rem; }
+
+/* ── /esnaf/<kod> sayfası ──────────────────────────────────────────────── */
+[hidden] { display: none !important; }
+
+.kod-kutu {
+  margin: 1.5rem 0;
+  padding: 1.1rem 1rem 1.25rem;
+  background: var(--zemin-2);
+  border: 1px solid var(--cizgi);
+  border-radius: 10px;
+  text-align: center;
+}
+.kod-etiket {
+  margin: 0 0 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--yazi-2);
+}
+.kod {
+  margin: 0.2rem 0 0.9rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 2.1rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.14em;
+  user-select: all;
+  -webkit-user-select: all;
+}
+.kopyala {
+  min-height: 2.75rem;
+  padding: 0.6rem 1.2rem;
+  border: 0;
+  border-radius: 8px;
+  background: var(--vurgu);
+  color: var(--zemin);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.kopyala:focus-visible { outline: 2px solid var(--vurgu); outline-offset: 3px; }
+.kopya-durum { min-height: 1.65em; margin: 0.6rem 0 0; color: var(--yazi-2); font-size: 0.95rem; }
 
 /* ── alt bilgi ─────────────────────────────────────────────────────────── */
 .alt {

@@ -20,6 +20,7 @@ const PORT = Number(process.env.PORT || 8000)
 const TURLER = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json',
   '': 'text/plain; charset=utf-8',
 }
 
@@ -40,8 +41,11 @@ const sunucu = createServer((istek, yanit) => {
   }
 
   if (!existsSync(dosya) || !statSync(dosya).isFile()) {
+    // GitHub Pages gibi: bilinmeyen yola docs/404.html, durum kodu 404.
+    const yedek = join(KOK, '404.html')
     yanit.writeHead(404, { 'Content-Type': TURLER['.html'] })
-      .end('<!doctype html><meta charset="utf-8"><p>404 — sayfa yok')
+      .end(existsSync(yedek) ? readFileSync(yedek)
+        : '<!doctype html><meta charset="utf-8"><p>404 — sayfa yok')
     return
   }
   yanit.writeHead(200, { 'Content-Type': TURLER[extname(dosya)] || TURLER[''] })
@@ -70,6 +74,24 @@ if (process.argv.includes('--kontrol')) {
     if (!iyi) hata++
     console.log(`  ${iyi ? '✓' : '✗'} /gizlilik         ${y.status} → `
       + `${y.headers.get('location')}`)
+    // /esnaf/<kod>: Pages gibi 404.html (tek şablon); doğrulama dosyaları 200 + geçerli JSON
+    for (const adres of ['/esnaf/K7M2PQ4X', '/esnaf/k7m2-pq4x/', '/esnaf/', '/esnaf/GECERSIZ!', '/olmayan-sayfa']) {
+      const e = await fetch(`http://localhost:${PORT}${adres}`)
+      const govde = await e.text()
+      const iyi = e.status === 404 && govde.includes('id="esnaf"')
+        && /<meta name="robots" content="noindex/.test(govde)
+      if (!iyi) hata++
+      console.log(`  ${iyi ? '✓' : '✗'} ${adres.padEnd(22)} ${e.status}  404.html şablonu, noindex`)
+    }
+    for (const adres of ['/.well-known/apple-app-site-association', '/.well-known/assetlinks.json']) {
+      const e = await fetch(`http://localhost:${PORT}${adres}`)
+      const govde = await e.text()
+      let json = false
+      try { JSON.parse(govde); json = true } catch { /* geçersiz */ }
+      const iyi = e.status === 200 && json
+      if (!iyi) hata++
+      console.log(`  ${iyi ? '✓' : '✗'} ${adres.padEnd(42)} ${e.status}  ${e.headers.get('content-type')}  JSON=${json}`)
+    }
     sunucu.close()
     process.exit(hata ? 1 : 0)
   })

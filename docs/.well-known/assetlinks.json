@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.firsatci299",
+      "sha256_cert_fingerprints": [
+        "FB:E6:20:D6:4A:F6:8B:36:F4:44:B8:A4:86:92:21:F0:82:91:59:29:10:0F:94:18:F8:B2:0E:07:41:0C:D2:24"
+      ]
+    }
+  }
+]
