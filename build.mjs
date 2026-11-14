@@ -23,7 +23,7 @@ import { homedir } from 'node:os'
 
 /** Hukuki sayfaların üstündeki "Bu metin taslaktır" bandını gösterir.
  *  Yürürlüğe alırken false yap → bant kalkar, noindex de kalkar. */
-export const TASLAK = true
+export const TASLAK = false
 
 /** Tüm sayfalara <meta name="robots" content="noindex"> koyar.
  *  Görev tanımı gereği TASLAK ile aynı bayrağa bağlı. */
