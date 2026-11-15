@@ -108,6 +108,12 @@ sitenin 404 sayfası.
   (200, yönlendirme yok, içerik tipi) ve `.../assetlinks.json`.
 - Test: `npm test` (`test/esnaf.test.mjs` — yol ayrıştırma, kopyalama, DOM kurulumu).
 
+## `/app-ads.txt` — AdMob yayıncı doğrulaması
+
+`docs/app-ads.txt` (https://firsatci.app/app-ads.txt) tek satırdır; `build.mjs` başındaki `APP_ADS_SATIRI`
+sabitinden üretilir, elle düzenlenmez ve `build.mjs` dosyayı geri okuyup tam eşitliği + IAB biçimini ölçer.
+Pages `.txt`'yi `text/plain` sunar; `sunucu.mjs --kontrol` içerik ve tür için `/app-ads.txt`'yi de ister.
+
 ## Bilerek yok
 
 Analitik, çerez, dış izleme kodu, harici CDN, web yazı tipi — hiçbiri yok. JavaScript yalnız
