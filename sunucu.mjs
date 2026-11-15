@@ -21,7 +21,8 @@ const TURLER = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.json': 'application/json',
-  '': 'text/plain; charset=utf-8',
+  '.txt': 'text/plain; charset=utf-8',
+  '':'text/plain; charset=utf-8',
 }
 
 const sunucu = createServer((istek, yanit) => {
@@ -92,6 +93,14 @@ if (process.argv.includes('--kontrol')) {
       if (!iyi) hata++
       console.log(`  ${iyi ? '✓' : '✗'} ${adres.padEnd(42)} ${e.status}  ${e.headers.get('content-type')}  JSON=${json}`)
     }
+    // app-ads.txt: kökte, 200, düz metin, tek satır
+    const a = await fetch(`http://localhost:${PORT}/app-ads.txt`)
+    const aGovde = await a.text()
+    const aTur = a.headers.get('content-type') || ''
+    const aIyi = a.status === 200 && /^text\/plain/.test(aTur)
+      && aGovde === 'google.com, pub-9907183381623414, DIRECT, f08c47fec0942fa0\n'
+    if (!aIyi) hata++
+    console.log(`  ${aIyi ? '✓' : '✗'} /app-ads.txt${' '.repeat(10)} ${a.status}  ${aTur}  ${aGovde.length} bayt`)
     sunucu.close()
     process.exit(hata ? 1 : 0)
   })

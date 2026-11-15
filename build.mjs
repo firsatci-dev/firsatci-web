@@ -83,6 +83,10 @@ const ANDROID_SHA256 =
 /** Uygulamaya açılan tek yol öneki (AASA + Android intent filtresi + 404.html aynı). */
 const ESNAF_YOL_ONEKI = '/esnaf/*'
 
+/** IAB app-ads.txt (https://firsatci.app/app-ads.txt) — AdMob yayıncı hesabı doğrulaması.
+ *  Dosya TEK satırdır; başka satır eklenmez. Düz metin olarak sunulur. */
+const APP_ADS_SATIRI = 'google.com, pub-9907183381623414, DIRECT, f08c47fec0942fa0'
+
 /** Kaynak Markdown'daki göreli bağlantıların site karşılığı. */
 const MD_HEDEF = {
   'index.md': '/',
@@ -503,7 +507,24 @@ function assetlinksJson () {
   }], null, 2) + '\n'
 }
 
-const ESNAF_YASAK_BETIK = /document\.cookie|localStorage|sessionStorage|indexedDB|fetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|new\s+Image|import\s*\(/
+function appAdsMetni () {
+  return APP_ADS_SATIRI + '\n'
+}
+
+/** app-ads.txt üretilen dosyadan ölçülür: kökte var, tam tek satır, satır sonlu. */
+function appAdsKontrolu (cikti) {
+  const yol = join(cikti, 'app-ads.txt')
+  if (!existsSync(yol)) return ['app-ads.txt: docs/ köküne yazılmamış']
+  const icerik = readFileSync(yol, 'utf8')
+  const hatalar = []
+  if (icerik !== appAdsMetni()) hatalar.push('app-ads.txt: içerik tam olarak tek beklenen satır + satır sonu değil')
+  if (!/^google\.com, pub-\d{16}, DIRECT, [0-9a-f]{16}\n$/.test(icerik)) {
+    hatalar.push('app-ads.txt: IAB satır biçimi (alan, yayıncı kimliği, ilişki, sertifika yetkilisi kimliği) bozuk')
+  }
+  return hatalar
+}
+
+const ESNAF_YASAK_BETIK =/document\.cookie|localStorage|sessionStorage|indexedDB|fetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|new\s+Image|import\s*\(/
 
 /** /esnaf sayfasının gizlilik/bağlantısızlık sözleşmesini üretilen dosyalardan ölçer. */
 function esnafKontrolu (cikti, digerSayfalar, betik) {
@@ -793,12 +814,15 @@ function derle () {
   hatalar.push(...esnafMobil.hatalar)
   olcumler.push(['404.html', esnafMobil.enUzun])
 
+  yaz(join(CIKTI, 'app-ads.txt'), appAdsMetni())
+  uretilen.push('docs/app-ads.txt   →  /app-ads.txt (AdMob; tek satır, düz metin)')
   yaz(join(CIKTI, 'style.css'), css)
   yaz(join(CIKTI, 'CNAME'), ALAN_ADI + '\n')
   yaz(join(CIKTI, '.nojekyll'), '')
   hatalar.push(...cssKontrolu(css))
   hatalar.push(...bagKontrolu(sayfalar))
   hatalar.push(...esnafKontrolu(CIKTI, digerSayfalar, betik))
+  hatalar.push(...appAdsKontrolu(CIKTI))
 
   // ── rapor ────────────────────────────────────────────────────────────────
   console.log(`kaynak : ${KAYNAK}`)
@@ -818,6 +842,7 @@ function derle () {
   console.log('esnaf sayfası  : 404.html noindex · hiçbir sayfadan bağlantı yok · site haritası/robots yok ·')
   console.log('                 betikte çerez/depolama/ağ çağrısı yok · AASA ve assetlinks geçerli JSON,')
   console.log(`                 yol yalnız ${ESNAF_YOL_ONEKI} · parmak izi 32 bayt`)
+  console.log('app-ads.txt    : kökte, tek satır + satır sonu, IAB biçimi')
   console.log(`mobil (${EKRAN} px) : kullanılabilir genişlik ${KULLANILABILIR} px; `
     + 'bölünemeyen en uzun belirteç →')
   for (const [ad, uzunluk] of olcumler) {
